@@ -41,7 +41,7 @@ router.get("/:id", (req, res) => {
 		return res.status(200).send(data);
 	});
 });
-
+//
 // POST NEW PRODUCT
 router.post("/", (req, res) => {
 	try {
