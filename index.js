@@ -8,7 +8,7 @@ const {
 	imageRouter,
 } = require("./router");
 const bearerToken = require("express-bearer-token");
-const port = 5000;
+const port = process.env.PORT || 2002;
 
 const app = express();
 
