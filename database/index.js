@@ -1,4 +1,5 @@
 const mysql = require("mysql");
+const { MongoClient, ObjectID } = require("mongodb");
 
 const db = mysql.createConnection({
 	host: "db4free.net",
@@ -7,6 +8,7 @@ const db = mysql.createConnection({
 	database: "berger",
 	port: 3306,
 });
+
 // const db = mysql.createConnection({
 // 	host: "localhost",
 // 	user: "adhitanjung",
@@ -15,4 +17,7 @@ const db = mysql.createConnection({
 // 	port: 3306,
 // });
 
-module.exports = db;
+const url =
+	"mongodb+srv://adhtanjung:Asd12345@bergercluster.lnuli.mongodb.net/test?retryWrites=true&w=majority";
+
+module.exports = { db, mongo: { MongoClient, ObjectID, url } };
