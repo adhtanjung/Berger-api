@@ -17,26 +17,26 @@ const bearerToken = require("express-bearer-token");
 const port = process.env.PORT || 2002;
 require("./helpers/passport");
 
+app.use(cors());
 app.use(bearerToken());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// app.use(cors());
 // app.use(
 // 	cookieSession({
 // 		name: "tuto-session",
 // 		keys: ["key1", "key2"],
 // 	})
 // );
-app.use(function (req, res, next) {
-	res.header("Access-Control-Allow-Origin", "https://berger-6585f.web.app");
-	res.header(
-		"Access-Control-Allow-Headers",
-		"Origin, X-Requested-With, Content-Type, Accept"
-	);
-	next();
-});
+// app.use(function (req, res, next) {
+// 	res.header("Access-Control-Allow-Origin", "https://berger-6585f.web.app");
+// 	res.header(
+// 		"Access-Control-Allow-Headers",
+// 		"Origin, X-Requested-With, Content-Type, Accept"
+// 	);
+// 	next();
+// });
 
 let userCount = 0;
 app.io = io;

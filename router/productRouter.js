@@ -9,8 +9,6 @@ const fs = require("fs");
 
 // GET PRODUCTS DATA
 router.get("/", (req, res) => {
-	res.header("Access-Control-Allow-Origin", "*");
-	res.header("Access-Control-Allow-Credentials", true);
 	let sql = `SELECT * FROM products`;
 	console.log("masuk");
 	if (!_.isEmpty(req.query.category)) {
