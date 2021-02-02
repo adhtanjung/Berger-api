@@ -29,6 +29,14 @@ app.use(express.static("public"));
 // 		keys: ["key1", "key2"],
 // 	})
 // );
+app.use(function (req, res, next) {
+	res.header("Access-Control-Allow-Origin", "https://berger-6585f.web.app");
+	res.header(
+		"Access-Control-Allow-Headers",
+		"Origin, X-Requested-With, Content-Type, Accept"
+	);
+	next();
+});
 
 let userCount = 0;
 app.io = io;
