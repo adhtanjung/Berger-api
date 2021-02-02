@@ -1,10 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cors = require("cors");
 const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 const cookieSession = require("cookie-session");
+const cors = require("cors");
 const {
 	userRouter,
 	cartRouter,
@@ -20,15 +20,20 @@ require("./helpers/passport");
 app.use(bearerToken());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors());
 app.use(express.static("public"));
 
+var corsOptions = {
+	origin: "*",
+	optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+app.use(cors(corsOptions));
 // app.use(
 // 	cookieSession({
 // 		name: "tuto-session",
 // 		keys: ["key1", "key2"],
 // 	})
 // );
+
 let userCount = 0;
 app.io = io;
 app.userCount = userCount;
