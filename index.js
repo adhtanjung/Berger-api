@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-app.use(cors());
+// app.use(cors());
 // app.use(
 // 	cookieSession({
 // 		name: "tuto-session",
