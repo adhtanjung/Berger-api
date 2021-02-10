@@ -1,10 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 const cookieSession = require("cookie-session");
-const cors = require("cors");
 const {
 	userRouter,
 	cartRouter,
@@ -17,10 +17,10 @@ const bearerToken = require("express-bearer-token");
 const port = process.env.PORT || 2002;
 require("./helpers/passport");
 
-app.use(cors());
 app.use(bearerToken());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(cors());
 app.use(express.static("public"));
 
 // app.use(
@@ -29,15 +29,6 @@ app.use(express.static("public"));
 // 		keys: ["key1", "key2"],
 // 	})
 // );
-// app.use(function (req, res, next) {
-// 	res.header("Access-Control-Allow-Origin", "https://berger-6585f.web.app");
-// 	res.header(
-// 		"Access-Control-Allow-Headers",
-// 		"Origin, X-Requested-With, Content-Type, Accept"
-// 	);
-// 	next();
-// });
-
 let userCount = 0;
 app.io = io;
 app.userCount = userCount;

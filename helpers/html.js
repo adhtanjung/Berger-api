@@ -141,7 +141,7 @@ const html = (email, token) => {
                                 <td bgcolor="#ffffff" align="center" style="padding: 20px 30px 60px 30px;">
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
-                                            <td align="center" style="border-radius: 3px;" bgcolor="#FFA73B"><a href="https://berger-6585f.web.app/verification?verify=${token}" target="_blank" style="font-size: 20px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #ffffff; text-decoration: none; padding: 15px 25px; border-radius: 2px; border: 1px solid #FFA73B; display: inline-block;">Confirm Account</a></td>
+                                            <td align="center" style="border-radius: 3px;" bgcolor="#FFA73B"><a href="http://localhost:3000/verification?verify=${token}" target="_blank" style="font-size: 20px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #ffffff; text-decoration: none; padding: 15px 25px; border-radius: 2px; border: 1px solid #FFA73B; display: inline-block;">Confirm Account</a></td>
                                         </tr>
                                     </table>
                                 </td>
@@ -156,7 +156,7 @@ const html = (email, token) => {
                 </tr> <!-- COPY -->
                 <tr>
                     <td bgcolor="#ffffff" align="left" style="padding: 20px 30px 20px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 10px; font-weight: 400; line-height: 25px;">
-                        <p style="margin: 0;"><a href="https://berger-6585f.web.app/verification?verify=${token}" target="_blank" style="color: #FFA73B;">hhttps://berger-6585f.web.app/verification?verify=${token}</a></p>
+                        <p style="margin: 0;"><a href="http://localhost:3000/verification?verify=${token}" target="_blank" style="color: #FFA73B;">http://localhost:3000/verification?verify=${token}</a></p>
                     </td>
                 </tr>
                 <tr>
@@ -247,7 +247,7 @@ const html2 = (token) => {
                                             password has been generated for you. To reset your password, click the
                                             following link and follow the instructions.
                                         </p>
-                                        <a href="https://berger-6585f.web.app/reset-password?token=${token}"
+                                        <a href="http://localhost:3000/reset-password?token=${token}"
                                             style="background:#20e277;text-decoration:none !important; font-weight:500; margin-top:35px; color:#fff;text-transform:uppercase; font-size:14px;padding:10px 24px;display:inline-block;border-radius:50px;">Reset
                                             Password</a>
                                     </td>

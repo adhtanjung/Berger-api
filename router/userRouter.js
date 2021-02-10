@@ -1,4 +1,6 @@
-const { db } = require("../database");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.CLIENT_ID);
+const { query } = require("../database");
 const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
@@ -8,6 +10,7 @@ const {
 	transporter,
 	html,
 	html2,
+	googleAuth,
 } = require("../helpers");
 const jwt = require("jsonwebtoken");
 const hash = require("../helpers/hash");
@@ -18,7 +21,7 @@ router.post("/login", (req, res) => {
 	const encryptedPassword = hash(password);
 	let sql = `SELECT id,email,role_id,isverified FROM users WHERE email='${email}' and password = '${encryptedPassword}'`;
 	try {
-		db.query(sql, (err, data) => {
+		query(sql, (err, data) => {
 			if (err) {
 				return res.status(500).send(err.message);
 			}
@@ -39,7 +42,7 @@ router.post("/login", (req, res) => {
 router.post("/keep-login", checkToken, (req, res) => {
 	try {
 		let sql = `SELECT id,email,role_id,isverified FROM users WHERE id=${req.user.id}`;
-		db.query(sql, (err, data) => {
+		query(sql, (err, data) => {
 			return res.status(200).send(data[0]);
 		});
 	} catch (err) {
@@ -54,7 +57,7 @@ router.post("/signup", (req, res) => {
 	const encryptedPassword = hash(password);
 	try {
 		let sql = `INSERT INTO users`;
-		db.query(
+		query(
 			`${sql}(email,password,role_id,isverified) VALUES ('${email}','${encryptedPassword}',2,0);`,
 			(err, data) => {
 				if (err) {
@@ -87,8 +90,9 @@ router.post("/signup", (req, res) => {
 					id: data.insertId,
 					role_id: 2,
 					isverified: 0,
-					email: email,
-					token: token,
+					email,
+					token,
+					isLoggedInWithGoogle: 0,
 				});
 			}
 		);
@@ -101,8 +105,8 @@ router.post("/signup", (req, res) => {
 router.get("/:condition", (req, res) => {
 	if (req.params.condition === "userdetail") {
 		if (req.query.email) {
-			db.query(
-				`SELECT id,email,role_id,isverified FROM users WHERE email='${req.query.email}'`,
+			query(
+				`SELECT id,email,role_id,isverified FROM users WHERE email='${req.query.email}' AND isLoggedInWithGoogle =0`,
 				(err, data) => {
 					if (err) {
 						return res.status(500).send(err.message);
@@ -124,7 +128,7 @@ router.get("/:condition", (req, res) => {
 				}
 				return decoded;
 			});
-			db.query(
+			query(
 				`UPDATE users SET isverified =1 WHERE id=${userData.id}`,
 				(err, data) => {
 					return res
@@ -136,7 +140,7 @@ router.get("/:condition", (req, res) => {
 	} else {
 		const id = req.params.condition;
 		let sql = `SELECT * FROM users WHERE id=${id}`;
-		db.query(sql, (err, data) => {
+		query(sql, (err, data) => {
 			if (err) {
 				return res.status(500).send(err.message);
 			}
@@ -147,7 +151,7 @@ router.get("/:condition", (req, res) => {
 // GET USERS EMAIL THRU QUERY
 // router.get("/userdetail", (req, res) => {
 // 	if (req.query.email) {
-// 		db.query(
+// 		query(
 // 			`SELECT id,email,role_id,isverified FROM users WHERE email='${req.query.email}'`,
 // 			(err, data) => {
 // 				if (err) {
@@ -163,25 +167,25 @@ router.get("/:condition", (req, res) => {
 router.patch("/:id", (req, res) => {
 	const id = req.params.id;
 	if (req.body.email) {
-		db.query(
+		query(
 			`UPDATE users SET email='${req.body.email}' WHERE id=${id}`,
 			(err, data) => {
 				if (err) {
 					return res.status(500).send(err.message);
 				}
-				db.query(`SELECT * FROM users WHERE id=${id}`, (err, data) => {
+				query(`SELECT * FROM users WHERE id=${id}`, (err, data) => {
 					return res.status(201).send(data[0]);
 				});
 			}
 		);
 	} else if (req.body.password) {
-		db.query(
+		query(
 			`UPDATE users SET password ='${req.body.password}' WHERE id=${id}`,
 			(err, data) => {
 				if (err) {
 					return status(500).send(err.message);
 				}
-				db.query(`SELECT * FROM users WHERE id=${id}`, (err, data) => {
+				query(`SELECT * FROM users WHERE id=${id}`, (err, data) => {
 					return res.status(201).send(data[0]);
 				});
 			}
@@ -195,15 +199,12 @@ router.post("/verification", checkToken, (req, res) => {
 	try {
 		if (req.user) {
 			const { id, email, role_id } = req.user;
-			db.query(
-				`UPDATE users SET isverified = 1 WHERE id =${id}`,
-				(err, data) => {
-					if (err) {
-						return res.send(err.message);
-					}
-					return res.status(200).send({ id, email, role_id, isverified: 1 });
+			query(`UPDATE users SET isverified = 1 WHERE id =${id}`, (err, data) => {
+				if (err) {
+					return res.send(err.message);
 				}
-			);
+				return res.status(200).send({ id, email, role_id, isverified: 1 });
+			});
 		}
 	} catch (err) {
 		console.log(err);
@@ -234,34 +235,38 @@ router.post("/resend-email", (req, res) => {
 });
 
 // HANDLE FORGOT PASSWORD
-router.post("/forgot-password", (req, res) => {
-	const { email } = req.body;
-	db.query(`SELECT id FROM users WHERE email='${email}'`, (err, data) => {
-		if (err) {
-			return res.status(500).send(err.message);
+router.post("/forgot-password", async (req, res) => {
+	try {
+		const { email } = req.body;
+		const data = await query(
+			`SELECT id FROM users WHERE email='${email}' AND isLoggedInWithGoogle = 0`
+		);
+		console.log(data);
+		if (data.length > 0) {
+			const token = createJWTToken({ ...data[0] });
+			let mailOptions = {
+				from: "Berger.inc <adhtanjung@gmail.com>",
+				to: email,
+				subject: "Email Verification",
+
+				html: html2(token),
+			};
+
+			transporter.sendMail(mailOptions, (err, res2) => {
+				if (err) {
+					console.log("Something's went wrong");
+				} else {
+					console.log("Email sent");
+				}
+			});
+			return res.status(200).send("ok");
+		} else {
+			return res.send(data);
 		}
-
-		const token = createJWTToken({ ...data[0] });
-		let mailOptions = {
-			from: "Berger.inc <adhtanjung@gmail.com>",
-			to: email,
-			subject: "Email Verification",
-			text: "Halo Dunia!",
-
-			html: html2(token),
-		};
-
-		transporter.sendMail(mailOptions, (err, res2) => {
-			if (err) {
-				console.log("Something's went wrong");
-				res.send("Something's went wrong");
-			} else {
-				console.log("Email sent");
-				res.send("Email sent");
-			}
-		});
-		return res.status(200).send("ok");
-	});
+	} catch (err) {
+		console.log(err.message);
+		return res.send(err.message);
+	}
 });
 
 // RESET PASSWORD
@@ -271,7 +276,7 @@ router.post("/reset-password", checkToken, (req, res) => {
 	const encryptedPassword = hash(password);
 	const { id } = req.user;
 	console.log(encryptedPassword);
-	db.query(
+	query(
 		`UPDATE users SET password='${encryptedPassword}' WHERE id=${id}`,
 		(err, data) => {
 			if (err) {
@@ -284,6 +289,52 @@ router.post("/reset-password", checkToken, (req, res) => {
 			});
 		}
 	);
+});
+
+// login with google
+router.post("/google/login", async (req, res) => {
+	try {
+		console.log("masuk google");
+		const { token } = req.body;
+		const ticket = await client.verifyIdToken({
+			idToken: token,
+			audience: process.env.CLIENT_ID,
+		});
+		const { name, email, picture, sub } = ticket.getPayload();
+		const response = await query(
+			`SELECT u.id, u.email, u.role_id, u.isverified, u.isLoggedInWithGoogle FROM google_users gu
+			JOIN users u ON gu.google_id = u.google_id WHERE u.google_id = '${sub}';`
+		);
+		if (response.length > 0) {
+			const token = createJWTToken({ ...response[0] });
+			console.log(token);
+			return res.status(200).send({ ...response[0], token });
+		} else {
+			await query(`INSERT INTO google_users (google_id) VALUES ('${sub}')`);
+			await query(
+				`INSERT INTO users (email,isverified,google_id,isLoggedInWithGoogle) VALUES ('${email}', 1, '${sub}', 1)`
+			);
+
+			const google_register = await query(
+				`SELECT id, email, role_id, isverified, isLoggedInWithGoogle FROM users WHERE google_id = '${sub}'`
+			);
+			const token = createJWTToken({ ...google_register[0] });
+			return res.send({ ...google_register[0], token });
+		}
+		// res.length == 0
+		// insert into google_users (google_id ) values (${sub})
+		// insert into users () values
+
+		// if (response.length > 0) {
+		// 	return res.send(response[0]);
+		// }
+		console.log(sub);
+		res.status(201);
+		// res.json(user);
+	} catch (err) {
+		console.log(err.message);
+		return res.send(err.message);
+	}
 });
 
 module.exports = router;
