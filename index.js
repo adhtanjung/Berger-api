@@ -4,7 +4,6 @@ const cors = require("cors");
 const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
-const cookieSession = require("cookie-session");
 const {
 	userRouter,
 	cartRouter,
@@ -15,20 +14,13 @@ const {
 } = require("./router");
 const bearerToken = require("express-bearer-token");
 const port = process.env.PORT || 2002;
-require("./helpers/passport");
 
 app.use(bearerToken());
-app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static("public"));
 
-// app.use(
-// 	cookieSession({
-// 		name: "tuto-session",
-// 		keys: ["key1", "key2"],
-// 	})
-// );
 let userCount = 0;
 app.io = io;
 app.userCount = userCount;
